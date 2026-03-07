@@ -31,11 +31,12 @@ Because the bot uses SQLite to store data, you need to download the SQLite progr
    * Tool: Download and install [DB Browser for SQLite.](https://sqlitebrowser.org/dl/)
 
 ### 4. Configuration and Start
-1. Token: Create a .env file and insert your bot token:
+1. Token: Open the .env file and insert your bot token:
    ``
    DISCORD_API_TOKEN=YOUR_BOT_TOKEN_HERE
    ``
 2. Launch:
    * Windows: Double-click run.bat.
    * Other Platforms: Run python index.py in your terminal.
+
 
