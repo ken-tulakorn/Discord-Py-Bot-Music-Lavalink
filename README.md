@@ -17,4 +17,4 @@ A high-performance Discord music bot developed in Python, supporting music playb
 ## 🚀 How to Run
 1. Install Python and the required libraries:
    ```bash
-  pip install git+https://github.com/ken-tulakorn/Wavelink.git
+   pip install git+https://github.com/ken-tulakorn/Wavelink.git
