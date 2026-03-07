@@ -26,14 +26,9 @@ You need to install the core Discord library and my specific Wavelink fork to en
    pip install git+https://github.com/ken-tulakorn/Wavelink.git
    ```
 
-### 3. Database Setup (Manual Creation)
-Since the bot uses SQLite for storage, you need to manually set up the database structure:
-1. Tool: Download and install [DB Browser for SQLite.](https://sqlitebrowser.org/dl/)
-2. Create Folder: Create a folder named data in the root directory.
-3. Create Database: Use a tool like DB Browser for SQLite to create a file named music.db inside the data folder.
-4. Create Tables: You must create the following tables within music.db:
-   * db_music: With columns id, channel_id, guild_id, bool, and message_playing.
-   * db_box_music: With columns id, channel_id, guild_id, and message_id.
+### 3. Download Database
+Because the bot uses SQLite to store data, you need to download the SQLite program:
+   * Tool: Download and install [DB Browser for SQLite.](https://sqlitebrowser.org/dl/)
 
 ### 4. Configuration and Start
 1. Token: Create a .env file and insert your bot token:
@@ -43,3 +38,4 @@ Since the bot uses SQLite for storage, you need to manually set up the database 
 2. Launch:
    * Windows: Double-click run.bat.
    * Other Platforms: Run python index.py in your terminal.
+
