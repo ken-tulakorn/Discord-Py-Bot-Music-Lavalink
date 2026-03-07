@@ -1,5 +1,5 @@
 @echo off
-title Bot Stella-Light
+title Bot Music
 color 3
 cls
 
