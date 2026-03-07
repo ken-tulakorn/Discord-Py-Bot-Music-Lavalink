@@ -10,6 +10,7 @@ A high-performance Discord music bot developed in Python, supporting music playb
 
 ## 🛠️ Tech Stack
 * Python 3.10+
+* Java 17+ (Required for Lavalink)
 * [discord.py](https://github.com/Rapptz/discord.py)
 * [Wavelink (Custom Fork)](https://github.com/ken-tulakorn/Wavelink) (For advanced audio handling and Discord DAVE support)
 * SQLite3 (For managing the Music Box database)
@@ -17,6 +18,7 @@ A high-performance Discord music bot developed in Python, supporting music playb
 ## 🚀 How to Run
 ### 1. Prerequisites
 The bot is built using Python and requires both standard and external libraries:
+* Java: You must have Java 17 or higher installed to run the [Lavalink](https://lavalink.dev/getting-started/index.html) server.
 * Standard Libraries: `os`, `io`, `asyncio`, `logging`, `sqlite3`, `datetime`, `typing`.
 * External Libraries: `discord.py`, `pytz`, `python-dotenv`.
 
@@ -35,8 +37,10 @@ Because the bot uses SQLite to store data, you need to download the SQLite progr
    ``
    DISCORD_API_TOKEN=YOUR_BOT_TOKEN_HERE
    ``
-2. Launch:
+
+2. Lavalink Server Setup (Required)
+   * The bot needs a Lavalink server to process audio.
+     
+3. Launch:
    * Windows: Double-click run.bat.
    * Other Platforms: Run python index.py in your terminal.
-
-
