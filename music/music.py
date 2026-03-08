@@ -107,7 +107,7 @@ class Music(commands.Cog):
         self.player = None
         
     async def webhook(self) -> None :
-        connect_wavalink = [wavelink.Node(uri="ws://127.0.0.1:yourport", password="yourpassword")]
+        connect_wavalink = [wavelink.Node(uri="ws://127.0.0.1:2334", password="ken_tulakorn")]
         await wavelink.Pool.connect(nodes=connect_wavalink, client=self.bot, cache_capacity=100)
 
     async def online_wavelink(self, payload: wavelink.NodeReadyEventPayload) -> None:
@@ -116,7 +116,7 @@ class Music(commands.Cog):
     @commands.Cog.listener()
     async def on_wavelink_track_start(self, payload: wavelink.TrackStartEventPayload) -> None:
         player: wavelink.Player | None = payload.player
-        if not player: return
+        if not player or not player.guild: return
         track: wavelink.Playable = payload.track
         self.player = player
     
@@ -144,19 +144,19 @@ class Music(commands.Cog):
             cursor = db.cursor()
             cursor.execute("SELECT channel_id FROM db_music WHERE guild_id = ?", (player.guild.id,))
             fetch_one = cursor.fetchone()
-            channel = self.bot.get_channel(int(fetch_one[0])) if fetch_one else None
+            
+            # แก้ไขจุดที่อาจเกิด error int() NoneType
+            channel = self.bot.get_channel(int(fetch_one[0])) if fetch_one and fetch_one[0] else None
 
             if channel:
                 try:
                     cursor.execute("SELECT message_playing FROM db_music WHERE guild_id = ?", (player.guild.id,))
                     fetch_one_message_playing = cursor.fetchone()
-                    if fetch_one_message_playing:
+                    if fetch_one_message_playing and fetch_one_message_playing[0]:
                         try:
                             message = await channel.fetch_message(int(fetch_one_message_playing[0]))
                             await message.delete()
-                        except discord.NotFound:
-                            pass
-                        except discord.Forbidden:
+                        except (discord.NotFound, discord.Forbidden):
                             pass
                 except Exception as e:
                     logging.warning(f"Error handling playing message: {e}")
@@ -167,7 +167,7 @@ class Music(commands.Cog):
                 cursor.execute("SELECT channel_id, message_id FROM db_box_music WHERE guild_id = ?", (player.guild.id,))
                 box_data = cursor.fetchone()
                 
-                if box_data:
+                if box_data and box_data[0]:
                     box_channel = self.bot.get_channel(int(box_data[0]))
                     if box_channel:
                         if player.queue:
@@ -202,20 +202,23 @@ class Music(commands.Cog):
                     cursor.execute("SELECT channel_id, message_id FROM db_box_music WHERE guild_id = ?", (guild.id,))
                     box_data = cursor.fetchone()
 
-                    if box_data:
+                    if box_data and box_data[0] and box_data[1]:
                         channel = self.bot.get_channel(int(box_data[0]))
                         if channel:
-                            edited_message = await channel.fetch_message(int(box_data[1]))
-                            embed = discord.Embed(title="", description="**No music is currently playing**", color=discord.Color(value=0xF68B71))
-                            embed.set_author(name="Music Box | Ready to play 🌙", icon_url=self.bot.user.display_avatar.url)
+                            try:
+                                edited_message = await channel.fetch_message(int(box_data[1]))
+                                embed = discord.Embed(title="", description="**No music is currently playing**", color=discord.Color(value=0xF68B71))
+                                embed.set_author(name="Music Box | Ready to play 🌙", icon_url=self.bot.user.display_avatar.url)
 
-                            messages_to_delete = [msg async for msg in channel.history(limit=None) if str(msg.id) != str(box_data[1])]
-                            delete_tasks = [msg.delete() for msg in messages_to_delete]
-                            if delete_tasks:
-                                await asyncio.gather(*delete_tasks)
-                            
-                            await edited_message.edit(embed=embed)
-                            success_count += 1
+                                messages_to_delete = [msg async for msg in channel.history(limit=None) if str(msg.id) != str(box_data[1])]
+                                delete_tasks = [msg.delete() for msg in messages_to_delete]
+                                if delete_tasks:
+                                    await asyncio.gather(*delete_tasks)
+                                
+                                await edited_message.edit(embed=embed)
+                                success_count += 1
+                            except discord.NotFound:
+                                failure_count += 1
                         else:
                             failure_count += 1
                     else:
@@ -269,7 +272,7 @@ class Music(commands.Cog):
                             await message_notify.delete()
                             return
                     else:
-                        if message.author.voice.channel.id != player.channel.id:
+                        if not message.author.voice or message.author.voice.channel.id != player.channel.id:
                             await message.delete()
                             embed = discord.Embed(color=discord.Colour.red())
                             embed.add_field(name="Please join the same voice channel as the bot before using the music bot commands.", value="", inline=False)
@@ -347,6 +350,8 @@ class Music(commands.Cog):
 
             if not player:
                 try:
+                    if not interaction.user.voice:
+                        raise AttributeError
                     player = await interaction.user.voice.channel.connect(cls=wavelink.Player, self_deaf=True)
                 except AttributeError:
                     embed = discord.Embed(color=discord.Colour.red())
@@ -354,7 +359,7 @@ class Music(commands.Cog):
                     await interaction.response.send_message(embed=embed, ephemeral=True)
                     return
             else:
-                if interaction.user.voice.channel.id != player.channel.id:
+                if not interaction.user.voice or interaction.user.voice.channel.id != player.channel.id:
                     embed = discord.Embed(color=discord.Colour.red())
                     embed.add_field(name="Please join the same voice channel as the bot before using the music bot.", value="", inline=False)
                     await interaction.response.send_message(embed=embed, ephemeral=True)
@@ -397,10 +402,7 @@ class Music(commands.Cog):
             if not player.playing:
                 await player.play(player.queue.get(), volume=30)
 
-            try:
-                await interaction.message.delete()
-            except discord.HTTPException:
-                pass
+            # จุดที่เคย error: ลบ interaction.message.delete() ออกไปแล้ว
         else:
             embed = discord.Embed(color=discord.Colour.red())
             embed.add_field(name="Please grant the following permissions so that the bot can function.", value="```Admin```", inline=False)
@@ -409,6 +411,8 @@ class Music(commands.Cog):
     @commands.Cog.listener()
     async def on_wavelink_player_update(self, payload: wavelink.PlayerUpdateEventPayload) -> None:
         player: wavelink.Player | None = payload.player
+        if not player or not player.guild: return # เพิ่มความปลอดภัย
+        
         if player.playing:
             with sqlite3.connect("data/music.db") as db:
                 cursor = db.cursor()
@@ -418,6 +422,8 @@ class Music(commands.Cog):
     @commands.Cog.listener()
     async def on_wavelink_track_end(self, payload: wavelink.TrackEndEventPayload) -> None:
         player: wavelink.Player | None = payload.player
+        if not player or not player.guild: return # เพิ่มความปลอดภัย
+        
         with sqlite3.connect("data/music.db") as db:
             cursor = db.cursor()
             cursor.execute("UPDATE db_music SET bool = 'False' WHERE guild_id = ?", (player.guild.id,))
@@ -449,7 +455,7 @@ class Music(commands.Cog):
                     cursor.execute("SELECT channel_id, message_id FROM db_box_music WHERE guild_id = ?", (member.guild.id,))
                     box_data = cursor.fetchone()
 
-                    if box_data:
+                    if box_data and box_data[0] and box_data[1]:
                         channel = self.bot.get_channel(int(box_data[0]))
                         message_id_to_keep = int(box_data[1])
                         
@@ -486,5 +492,3 @@ class Music(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(Music(bot))
-
-
