@@ -15,7 +15,7 @@ class MusicControllerView(discord.ui.View):
             return False
         return True
     
-    @discord.ui.button(style=discord.ButtonStyle.primary, label="", emoji="<a:music_loop:1193130011172032523>", custom_id="loop_all", row=1)
+    @discord.ui.button(style=discord.ButtonStyle.primary, label="loop_all", emoji="", custom_id="loop_all", row=1)
     async def btn_loop_all(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not await self.check_user_voice(interaction): return
         try:
@@ -28,7 +28,7 @@ class MusicControllerView(discord.ui.View):
             await interaction.response.send_message("An error occurred. Please try again later.", ephemeral=True)
             logging.error(f"Error in btn_loop_all: {e}")
 
-    @discord.ui.button(style=discord.ButtonStyle.primary, label="", emoji="<a:music_clear:1193130005232889977>", custom_id="clear", row=1)
+    @discord.ui.button(style=discord.ButtonStyle.primary, label="clear", emoji="", custom_id="clear", row=1)
     async def btn_clear(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not await self.check_user_voice(interaction): return
         if self.player:
@@ -39,7 +39,7 @@ class MusicControllerView(discord.ui.View):
             embed.add_field(name="You have successfully used the clear command.", value="", inline=False)
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    @discord.ui.button(style=discord.ButtonStyle.primary, label="", emoji="<a:Untitleddesignunscreen11:1203253448464797707>", custom_id="skip", row=1)
+    @discord.ui.button(style=discord.ButtonStyle.primary, label="skip", emoji="", custom_id="skip", row=1)
     async def btn_skip(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not await self.check_user_voice(interaction): return
         if self.player:
@@ -53,7 +53,7 @@ class MusicControllerView(discord.ui.View):
                 embed.add_field(name="No more songs in the queue to skip.", value="", inline=False)
                 await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    @discord.ui.button(style=discord.ButtonStyle.primary, label="", emoji="<a:downloadunscreen1:1203273373753417728>", custom_id="loop", row=1)
+    @discord.ui.button(style=discord.ButtonStyle.primary, label="loop", emoji="", custom_id="loop", row=1)
     async def btn_loop(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not await self.check_user_voice(interaction): return
         if self.player:
@@ -62,7 +62,7 @@ class MusicControllerView(discord.ui.View):
             embed.add_field(name="You have successfully used the loop command.", value="", inline=False)
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    @discord.ui.button(style=discord.ButtonStyle.primary, label="", emoji="<a:download1unscreen:1203356639990652979>", custom_id="filter", row=2)
+    @discord.ui.button(style=discord.ButtonStyle.primary, label="filter", emoji="", custom_id="filter", row=2)
     async def btn_filter(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not await self.check_user_voice(interaction): return
         if self.player:
@@ -70,7 +70,7 @@ class MusicControllerView(discord.ui.View):
             embed.add_field(name="You have successfully used the filter command.", value="", inline=False)
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    @discord.ui.button(style=discord.ButtonStyle.primary, label="", emoji="<a:bass1:1041620050743930910>", custom_id="base", row=2)
+    @discord.ui.button(style=discord.ButtonStyle.primary, label="base", emoji="", custom_id="base", row=2)
     async def btn_base(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not await self.check_user_voice(interaction): return
         if self.player:
@@ -78,7 +78,7 @@ class MusicControllerView(discord.ui.View):
             embed.add_field(name="You have successfully used the base command.", value="", inline=False)
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    @discord.ui.button(style=discord.ButtonStyle.primary, label="", emoji="<a:music_pause:1193130015408259112>", custom_id="pause", row=2)
+    @discord.ui.button(style=discord.ButtonStyle.primary, label="pause", emoji="", custom_id="pause", row=2)
     async def btn_pause(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not await self.check_user_voice(interaction): return
         if self.player:
@@ -90,7 +90,7 @@ class MusicControllerView(discord.ui.View):
                 embed.add_field(name="You have successfully used the resume command.", value="", inline=False)
             await interaction.response.send_message(embed=embed, ephemeral=True)
 
-    @discord.ui.button(style=discord.ButtonStyle.red, label="", emoji="<a:unscreen:1203119910805311588>", custom_id="disconnect", row=2)
+    @discord.ui.button(style=discord.ButtonStyle.red, label="disconnect", emoji="", custom_id="disconnect", row=2)
     async def btn_disconnect(self, interaction: discord.Interaction, button: discord.ui.Button):
         if not await self.check_user_voice(interaction): return
         if self.player:
@@ -486,3 +486,4 @@ class Music(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(Music(bot))
+
