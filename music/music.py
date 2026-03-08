@@ -107,7 +107,7 @@ class Music(commands.Cog):
         self.player = None
         
     async def webhook(self) -> None :
-        connect_wavalink = [wavelink.Node(uri="ws://127.0.0.1:2334", password="ken_tulakorn")]
+        connect_wavalink = [wavelink.Node(uri="ws://127.0.0.1:yourport", password="yourpassword")]
         await wavelink.Pool.connect(nodes=connect_wavalink, client=self.bot, cache_capacity=100)
 
     async def online_wavelink(self, payload: wavelink.NodeReadyEventPayload) -> None:
@@ -492,3 +492,4 @@ class Music(commands.Cog):
 
 async def setup(bot):
     await bot.add_cog(Music(bot))
+
