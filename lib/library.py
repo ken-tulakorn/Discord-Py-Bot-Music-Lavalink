@@ -2,7 +2,7 @@ import os
 import io
 import asyncio
 import logging
-import sqlite3
+import aiosqlite
 from datetime import datetime, timedelta
 from typing import cast
 
@@ -15,5 +15,4 @@ import wavelink
 import pytz
 from dotenv import load_dotenv
 
-# โหลด Environment Variables
 load_dotenv()
