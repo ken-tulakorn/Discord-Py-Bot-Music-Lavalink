@@ -95,10 +95,10 @@ class MusicControllerView(discord.ui.View):
         if not await self.check_user_voice(interaction): return
         if self.player:
             await self.player.disconnect()
-            with sqlite3.connect("data/music.db") as db:
-                cursor = db.cursor()
-                cursor.execute("UPDATE db_music SET bool = 'False' WHERE guild_id = ?", (interaction.guild.id,))
-                db.commit()
+            async with aiosqlite.connect("data/music.db") as db:
+                cursor = await db.cursor()
+                await cursor.execute("UPDATE db_music SET bool = 'False' WHERE guild_id = ?", (interaction.guild.id,))
+                await db.commit()
             await interaction.response.send_message("Disconnected.", ephemeral=True)          
 
 class Music(commands.Cog):
@@ -107,7 +107,7 @@ class Music(commands.Cog):
         self.player = None
         
     async def webhook(self) -> None :
-        connect_wavalink = [wavelink.Node(uri="ws://127.0.0.1:yourport", password="yourpassword")]
+        connect_wavalink = [wavelink.Node(uri="ws://127.0.0.1:2334", password="ken_tulakorn")]
         await wavelink.Pool.connect(nodes=connect_wavalink, client=self.bot, cache_capacity=100)
 
     async def online_wavelink(self, payload: wavelink.NodeReadyEventPayload) -> None:
@@ -140,18 +140,17 @@ class Music(commands.Cog):
         else:
             embed.add_field(name="Next song", value="```No more songs to play```", inline=False)
 
-        with sqlite3.connect("data/music.db") as db:
-            cursor = db.cursor()
-            cursor.execute("SELECT channel_id FROM db_music WHERE guild_id = ?", (player.guild.id,))
-            fetch_one = cursor.fetchone()
+        async with aiosqlite.connect("data/music.db") as db:
+            cursor = await db.cursor()
+            await cursor.execute("SELECT channel_id FROM db_music WHERE guild_id = ?", (player.guild.id,))
+            fetch_one = await cursor.fetchone()
             
-            # แก้ไขจุดที่อาจเกิด error int() NoneType
             channel = self.bot.get_channel(int(fetch_one[0])) if fetch_one and fetch_one[0] else None
 
             if channel:
                 try:
-                    cursor.execute("SELECT message_playing FROM db_music WHERE guild_id = ?", (player.guild.id,))
-                    fetch_one_message_playing = cursor.fetchone()
+                    await cursor.execute("SELECT message_playing FROM db_music WHERE guild_id = ?", (player.guild.id,))
+                    fetch_one_message_playing = await cursor.fetchone()
                     if fetch_one_message_playing and fetch_one_message_playing[0]:
                         try:
                             message = await channel.fetch_message(int(fetch_one_message_playing[0]))
@@ -162,10 +161,10 @@ class Music(commands.Cog):
                     logging.warning(f"Error handling playing message: {e}")
 
                 message = await channel.send(embed=embed, view=MusicControllerView(player, self.bot))
-                cursor.execute("UPDATE db_music SET message_playing = ? WHERE guild_id = ?", (message.id, player.guild.id))
+                await cursor.execute("UPDATE db_music SET message_playing = ? WHERE guild_id = ?", (message.id, player.guild.id))
 
-                cursor.execute("SELECT channel_id, message_id FROM db_box_music WHERE guild_id = ?", (player.guild.id,))
-                box_data = cursor.fetchone()
+                await cursor.execute("SELECT channel_id, message_id FROM db_box_music WHERE guild_id = ?", (player.guild.id,))
+                box_data = await cursor.fetchone()
                 
                 if box_data and box_data[0]:
                     box_channel = self.bot.get_channel(int(box_data[0]))
@@ -182,8 +181,8 @@ class Music(commands.Cog):
                             await edited_message.edit(embed=embeds)
                         except:
                             new_msg = await box_channel.send(embed=embeds)
-                            cursor.execute("UPDATE db_box_music SET message_id = ? WHERE guild_id = ?", (new_msg.id, player.guild.id))
-            db.commit()
+                            await cursor.execute("UPDATE db_box_music SET message_id = ? WHERE guild_id = ?", (new_msg.id, player.guild.id))
+            await db.commit()
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -192,15 +191,15 @@ class Music(commands.Cog):
         success_count = 0
         failure_count = 0
 
-        with sqlite3.connect("data/music.db") as db:
-            cursor = db.cursor()
+        async with aiosqlite.connect("data/music.db") as db:
+            cursor = await db.cursor()
             for guild in self.bot.guilds:
                 try:
-                    cursor.execute("UPDATE db_music SET bool = 'False' WHERE guild_id = ?", (guild.id,))
-                    db.commit()
+                    await cursor.execute("UPDATE db_music SET bool = 'False' WHERE guild_id = ?", (guild.id,))
+                    await db.commit()
 
-                    cursor.execute("SELECT channel_id, message_id FROM db_box_music WHERE guild_id = ?", (guild.id,))
-                    box_data = cursor.fetchone()
+                    await cursor.execute("SELECT channel_id, message_id FROM db_box_music WHERE guild_id = ?", (guild.id,))
+                    box_data = await cursor.fetchone()
 
                     if box_data and box_data[0] and box_data[1]:
                         channel = self.bot.get_channel(int(box_data[0]))
@@ -240,10 +239,10 @@ class Music(commands.Cog):
         is_admin = any(role.permissions.administrator for role in member.roles)
 
         if is_admin:
-            with sqlite3.connect("data/music.db") as db:
-                cursor = db.cursor()
-                cursor.execute("SELECT channel_id FROM db_box_music WHERE guild_id = ?", (message.guild.id,))
-                fetch_one = cursor.fetchone()
+            async with aiosqlite.connect("data/music.db") as db:
+                cursor = await db.cursor()
+                await cursor.execute("SELECT channel_id FROM db_box_music WHERE guild_id = ?", (message.guild.id,))
+                fetch_one = await cursor.fetchone()
                 
                 if fetch_one and message.channel.id == int(fetch_one[0]):
                     music_query = message.content
@@ -286,13 +285,13 @@ class Music(commands.Cog):
                     if not hasattr(player, "home"):
                         player.home = message.channel
 
-                    cursor.execute("SELECT channel_id FROM db_music WHERE guild_id = ?", (message.guild.id,))
-                    if cursor.fetchone():
-                        cursor.execute("UPDATE db_music SET channel_id = ? WHERE guild_id = ?", (message.channel.id, message.guild.id))
+                    await cursor.execute("SELECT channel_id FROM db_music WHERE guild_id = ?", (message.guild.id,))
+                    if await cursor.fetchone():
+                        await cursor.execute("UPDATE db_music SET channel_id = ? WHERE guild_id = ?", (message.channel.id, message.guild.id))
                     else:
-                        cursor.execute("INSERT INTO db_music (channel_id, guild_id) VALUES (?, ?)", (message.channel.id, message.guild.id))
-                    db.commit()
-                    
+                        await cursor.execute("INSERT INTO db_music (channel_id, guild_id) VALUES (?, ?)", (message.channel.id, message.guild.id))
+                    await db.commit()
+
                     if isinstance(tracks, wavelink.Playlist):
                         added: int = await player.queue.put_wait(tracks)
                         embed = discord.Embed(color=discord.Color.brand_green())
@@ -370,14 +369,14 @@ class Music(commands.Cog):
             if not hasattr(player, "home"):
                 player.home = interaction.channel
             
-            with sqlite3.connect("data/music.db") as db:
-                cursor = db.cursor()
-                cursor.execute("SELECT channel_id FROM db_music WHERE guild_id = ?", (guild.id,))
-                if cursor.fetchone():
-                    cursor.execute("UPDATE db_music SET channel_id = ? WHERE guild_id = ?", (interaction.channel.id, guild.id))
+            async with aiosqlite.connect("data/music.db") as db:
+                cursor = await db.cursor()
+                await cursor.execute("SELECT channel_id FROM db_music WHERE guild_id = ?", (guild.id,))
+                if await cursor.fetchone():
+                    await cursor.execute("UPDATE db_music SET channel_id = ? WHERE guild_id = ?", (interaction.channel.id, guild.id))
                 else:
-                    cursor.execute("INSERT INTO db_music (channel_id, guild_id) VALUES (?, ?)", (interaction.channel.id, guild.id))
-                db.commit()
+                    await cursor.execute("INSERT INTO db_music (channel_id, guild_id) VALUES (?, ?)", (interaction.channel.id, guild.id))
+                await db.commit()
 
             if isinstance(tracks, wavelink.Playlist):
                 track: wavelink.Playable = tracks[0]
@@ -401,8 +400,7 @@ class Music(commands.Cog):
 
             if not player.playing:
                 await player.play(player.queue.get(), volume=30)
-
-            # จุดที่เคย error: ลบ interaction.message.delete() ออกไปแล้ว
+                
         else:
             embed = discord.Embed(color=discord.Colour.red())
             embed.add_field(name="Please grant the following permissions so that the bot can function.", value="```Admin```", inline=False)
@@ -411,49 +409,49 @@ class Music(commands.Cog):
     @commands.Cog.listener()
     async def on_wavelink_player_update(self, payload: wavelink.PlayerUpdateEventPayload) -> None:
         player: wavelink.Player | None = payload.player
-        if not player or not player.guild: return # เพิ่มความปลอดภัย
+        if not player or not player.guild: return
         
         if player.playing:
-            with sqlite3.connect("data/music.db") as db:
-                cursor = db.cursor()
-                cursor.execute("UPDATE db_music SET bool = 'True' WHERE guild_id = ?", (player.guild.id,))
-                db.commit()
+            async with aiosqlite.connect("data/music.db") as db:
+                cursor = await db.cursor()
+                await cursor.execute("UPDATE db_music SET bool = 'True' WHERE guild_id = ?", (player.guild.id,))
+                await db.commit()
         
     @commands.Cog.listener()
     async def on_wavelink_track_end(self, payload: wavelink.TrackEndEventPayload) -> None:
         player: wavelink.Player | None = payload.player
-        if not player or not player.guild: return # เพิ่มความปลอดภัย
+        if not player or not player.guild: return
         
-        with sqlite3.connect("data/music.db") as db:
-            cursor = db.cursor()
-            cursor.execute("UPDATE db_music SET bool = 'False' WHERE guild_id = ?", (player.guild.id,))
-            db.commit()
+        async with aiosqlite.connect("data/music.db") as db:
+            cursor = await db.cursor()
+            await cursor.execute("UPDATE db_music SET bool = 'False' WHERE guild_id = ?", (player.guild.id,))
+            await db.commit()
         
         await asyncio.sleep(20)
 
-        with sqlite3.connect("data/music.db") as db:
-            cursor = db.cursor()
-            cursor.execute("SELECT bool FROM db_music WHERE guild_id = ?", (player.guild.id,))
-            fetch_one = cursor.fetchone()
+        async with aiosqlite.connect("data/music.db") as db:
+            cursor = await db.cursor()
+            await cursor.execute("SELECT bool FROM db_music WHERE guild_id = ?", (player.guild.id,))
+            fetch_one = await cursor.fetchone()
 
             if fetch_one and fetch_one[0] == "True":
                 return
 
         if player.queue.mode == wavelink.QueueMode.normal:
             await player.disconnect()
-            with sqlite3.connect("data/music.db") as db:
-                cursor = db.cursor()
-                cursor.execute("UPDATE db_music SET bool = 'False' WHERE guild_id = ?", (player.guild.id,))
-                db.commit()
+            async with aiosqlite.connect("data/music.db") as db:
+                cursor = await db.cursor()
+                await cursor.execute("UPDATE db_music SET bool = 'False' WHERE guild_id = ?", (player.guild.id,))
+                await db.commit()
                     
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
         if member == self.bot.user:
             if before.channel is not None and after.channel is None:
-                with sqlite3.connect("data/music.db") as db:
-                    cursor = db.cursor()
-                    cursor.execute("SELECT channel_id, message_id FROM db_box_music WHERE guild_id = ?", (member.guild.id,))
-                    box_data = cursor.fetchone()
+                async with aiosqlite.connect("data/music.db") as db:
+                    cursor = await db.cursor()
+                    await cursor.execute("SELECT channel_id, message_id FROM db_box_music WHERE guild_id = ?", (member.guild.id,))
+                    box_data = await cursor.fetchone()
 
                     if box_data and box_data[0] and box_data[1]:
                         channel = self.bot.get_channel(int(box_data[0]))
@@ -473,8 +471,8 @@ class Music(commands.Cog):
                             except discord.NotFound:
                                 pass
 
-                    cursor.execute("UPDATE db_music SET bool = 'False' WHERE guild_id = ?", (member.guild.id,))
-                    db.commit()
+                    await cursor.execute("UPDATE db_music SET bool = 'False' WHERE guild_id = ?", (member.guild.id,))
+                    await db.commit()
             return
 
         if self.bot.voice_clients:
@@ -484,10 +482,10 @@ class Music(commands.Cog):
                         await asyncio.sleep(20)
                         if len(before.channel.members) == 1:
                             await voice_client.disconnect()
-                            with sqlite3.connect("data/music.db") as db:
-                                cursor = db.cursor()
-                                cursor.execute("UPDATE db_music SET bool = 'False' WHERE guild_id = ?", (member.guild.id,))
-                                db.commit()
+                            async with aiosqlite.connect("data/music.db") as db:
+                                cursor = await db.cursor()
+                                await cursor.execute("UPDATE db_music SET bool = 'False' WHERE guild_id = ?", (member.guild.id,))
+                                await db.commit()
                     break
 
 async def setup(bot):
