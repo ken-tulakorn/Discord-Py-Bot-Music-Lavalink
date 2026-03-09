@@ -34,7 +34,6 @@ async def play(ctx: commands.Context, *, music: str) -> None:
 
         if not player:
             try:
-                # ให้บอทเข้าห้องเสียงพร้อมกับปิดหู (self_deaf=True)
                 player = await ctx.author.voice.channel.connect(cls=wavelink.Player, self_deaf=True) 
             except AttributeError:
                 embed = discord.Embed(color=discord.Colour.red())
@@ -53,16 +52,16 @@ async def play(ctx: commands.Context, *, music: str) -> None:
         if not hasattr(player, "home"):
             player.home = ctx.channel
 
-        with sqlite3.connect("data/music.db") as db:
-            cursor = db.cursor()
-            cursor.execute("SELECT channel_id FROM db_music WHERE guild_id = ?", (ctx.guild.id,))
-            fetch_one = cursor.fetchone()
+        async with aiosqlite.connect("data/music.db") as db:
+            cursor = await db.cursor()
+            await cursor.execute("SELECT channel_id FROM db_music WHERE guild_id = ?", (ctx.guild.id,))
+            fetch_one = await cursor.fetchone()
             
             if fetch_one:
-                cursor.execute("UPDATE db_music SET channel_id = ? WHERE guild_id = ?", (ctx.channel.id, ctx.guild.id))
+                await cursor.execute("UPDATE db_music SET channel_id = ? WHERE guild_id = ?", (ctx.channel.id, ctx.guild.id))
             else:
-                cursor.execute("INSERT INTO db_music (channel_id, guild_id) VALUES (?, ?)", (ctx.channel.id, ctx.guild.id))
-            db.commit()
+                await cursor.execute("INSERT INTO db_music (channel_id, guild_id) VALUES (?, ?)", (ctx.channel.id, ctx.guild.id))
+            await db.commit()
 
         if isinstance(tracks, wavelink.Playlist):
             added: int = await player.queue.put_wait(tracks)
